@@ -150,12 +150,15 @@ def recursion3(start,path, payload,currency_from,currency_to,results,graph):
     elif currency_to not in path or currency_to == start:        
         if currency_to == None:
             currency_to = next(iter(graph[currency_from]))  
-        # if currency_from not in path:
-        path.append(currency_to)       
-        exchange_rate = graph[currency_from][currency_to]
-        payload = payload*exchange_rate
+        if currency_to != start:
+            path.append(currency_to)       
+            exchange_rate = graph[currency_from][currency_to]
+            payload = payload*exchange_rate
 
-        if currency_to == start and len(path)>3:
+        if currency_to == start and len(path)>2:
+            path.append(currency_to)
+            exchange_rate = graph[currency_from][currency_to]
+            payload = payload*exchange_rate
             exists = False
             for x in results:
                 if x['path'] == path:
@@ -174,13 +177,49 @@ def recursion3(start,path, payload,currency_from,currency_to,results,graph):
             an_arbitrage = None
             if x not in path or x == start:
                 an_arbitrage = recursion3(start,path,payload,currency_to,x,results,graph)
-            if an_arbitrage != None or an_arbitrage != []:
+            if an_arbitrage != None and an_arbitrage != []:
                 result_copy = copy.deepcopy(results)
                 result_copy.append(copy.deepcopy(an_arbitrage))
                 results=result_copy
+                path = [start]
             # return results
-
-    
+def recursion4(start,path, payload,currency,results,graph):
+    if len(path)>=9:
+        return results    
+    for x in graph[currency]:
+        print('1', end='')
+        if x not in path:
+            exchange_rate = graph[currency][x]
+            payload *= exchange_rate
+            path.append(currency)   
+            an_arbitrage = None
+            an_arbitrage = recursion4(start,path,payload,x,results,graph)
+            if an_arbitrage != []:
+                payload = 1000
+            if an_arbitrage != None and an_arbitrage != []:
+                # result_copy = copy.deepcopy(results)
+                # result_copy.append(copy.deepcopy(an_arbitrage))
+                # results=result_copy
+                results.append(an_arbitrage)
+            path = [start]
+            if start != currency:
+                payload *= graph[start][currency]
+        if x == start and len(path)>1:
+            payload *= graph[currency][x]
+            path.append(currency)
+            path.append(x)
+            exists = False
+            for x in results:
+                if x['path'] == path:
+                    exists = True
+            if not exists:
+                arbitrage = dict()
+                arbitrage['payload']=payload
+                arbitrage['path']=path
+                if payload >1000:
+                    return copy.deepcopy(arbitrage)
+                else:
+                    return None
 def find_paths(graph,payload,max_val):
     referenced_list = []
     potential_payloads = []
@@ -188,8 +227,8 @@ def find_paths(graph,payload,max_val):
     for country in graph:
             path = []
             new_graph = copy.deepcopy(graph)
-            payloads = recursion3(country,[country],1000,country,None,[],graph)
-    return payloads        
+            payloads = recursion4(country,[],1000,country,referenced_list,graph)
+    return payloads
 
 def main():    
     (graph,amount) =make_nodes()
