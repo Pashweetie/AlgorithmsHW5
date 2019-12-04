@@ -1,4 +1,10 @@
 import copy
+class list_pointer:
+    def __init__(self,start,path = [],currency=None,payload=None):
+        self.start = start
+        self.path = path
+        self.currency = currency
+        self.payload = payload
 # class Node:
 #     def __init__(self,currencies = dict(), links = None):
 #         self.currencies = currencies
@@ -65,7 +71,9 @@ def print_payload(payload_dict):
     for y in payload_dict:
         counter += 1
         print('no ',counter)
-        print(y)
+        print('starting currency:',y.start)
+        print('payload:',y.payload)
+        print('path:',y.path)
         # for x in y:
         #     print('payload',y[x]['payload'],'path',y[x]['path'])
 # def recursive_traverse(start,currency_from,currency_to,payload,graph,path,return_dict,list_of_dicts,max_len):        
@@ -96,16 +104,24 @@ def print_payload(payload_dict):
 #                     return
 #                 path = [start]
 #                 return_dict = dict()
-
-# def non_recursive_traverse(start,graph, payload,max_val,path):
-#     key = start
-#     while len(path)<max_val:
-#         for x in graph[key]:
-#             if x not in path:
-#                 path.append(x)
-#                 key = x
-#                 payload = payload*graph[key][x]
-#             if x == start and len(path)>2:
+def move(start,end,graph):
+    payload = start.payload*graph[start.currency][end]
+    path = start.path
+    path.append(end)
+    return list_pointer(start.start,path,end,payload)
+def non_recursive_traverse(start,graph, payload):
+    queue = [list_pointer(start,[start],start,payload)]
+    final_list =[]
+    while len(queue)>0:
+        current = queue.pop(0)
+        for to in graph.keys():
+            if to not in current.path:
+                first = move(copy.deepcopy(current),to,graph)
+                home = move(copy.deepcopy(first),copy.deepcopy(first.start),graph)
+                if home.payload>1000:
+                    final_list.append(home)
+                queue.append(copy.deepcopy(first))
+    return final_list
 # def small_recursion
 
 # def start(graph,payload,max_len):
@@ -224,17 +240,22 @@ def find_paths(graph,payload,max_val):
     referenced_list = []
     potential_payloads = []
     path = []
-    for country in graph:
-            path = []
-            new_graph = copy.deepcopy(graph)
-            payloads = recursion4(country,[],1000,country,referenced_list,graph)
-    return payloads
-
+    # for country in graph:
+    #         path = []
+    #         new_graph = copy.deepcopy(graph)
+    #         payloads = recursion4(country,[],1000,country,referenced_list,graph)
+    # return payloads
+    return non_recursive_traverse('Canada',graph,1000)
 def main():    
     (graph,amount) =make_nodes()
     # print_x(graph)
     payloads = find_paths(graph,1000,amount)
-    print(payloads)
+    # print(payloads)
+    payloads = sorted(payloads,key=lambda x: x.payload,reverse = True)
     print_payload(payloads)
+    print('best payload',payloads[0])
+    print('starting currency:',payloads[0].start)
+    print('payload:',payloads[0].payload)
+    print('path:',payloads[0].path)
 if __name__ == "__main__":
   main()
